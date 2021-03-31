@@ -52,7 +52,7 @@ POD=$(${_kubectl} get pods -n ${namespace} -l kubevirt.io/created-by=${UUID} --n
 _exec="${_kubectl} exec  ${POD} -n ${namespace} -c compute --"
 
  if [ "${action}" == "pause" ]; then
-    ${_virtctl} pause ${vm}
+    ${_virtctl} pause vm ${vm}
     sleep ${timeout}
 elif [ "${action}" == "dump" ]; then
     ${_exec} mkdir -p /var/run/libvirtt
@@ -72,6 +72,6 @@ elif [ "${action}" == "unpause" ]; then
     _virsh="${_exec} virsh"
     ${_exec} rm -rf /var/run/libvirtt
     sleep ${timeout}
-    ${_virtctl} unpause ${vm}
+    ${_virtctl} unpause vm ${vm}
 fi
 
