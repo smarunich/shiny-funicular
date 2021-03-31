@@ -4,9 +4,10 @@ set -euo pipefail
 namespace=default
 action=""
 _kubectl="${KUBECTL_BINARY:-oc}"
+_virtctl="virtctl --namespace $namespace"
 timeout=3
 
-options=$(getopt -o n: --long suspend,resume,snapshot -- "$@")
+options=$(getopt -o n: --long pause,dump,copy,unpause -- "$@")
 [ $? -eq 0 ] || {
     echo "Incorrect options provided"
     exit 1
@@ -14,14 +15,17 @@ options=$(getopt -o n: --long suspend,resume,snapshot -- "$@")
 eval set -- "$options"
 while true; do
     case "$1" in
-    --suspend)
-        action="suspend"
+    --pause)
+        action="pause"
         ;;
-    --resume)
-        action="resume"
+    --dump)
+        action="dump"
         ;;
-    --snapshot)
-        action="snapshot"
+    --dump)
+        action="copy"
+        ;;
+    --unpause)
+        action="unpause"
         ;;
     -n)
         shift; # The arg is next in position args
@@ -39,7 +43,7 @@ shift $(expr $OPTIND - 1 )
 vm=$1
 
 if [[ -z "$vm" || -z "$action" ]]; then
-    echo "Usage: script <vm> [-n <namespace>]  --resume|--suspend".
+    echo "Usage: script <vm> [-n <namespace>]  --pause|--dump|--copy|--unpause".
     exit 1
 fi
 
@@ -47,26 +51,27 @@ UUID=$(${_kubectl} get vmis ${vm} -n ${namespace} --no-headers -o custom-columns
 POD=$(${_kubectl} get pods -n ${namespace} -l kubevirt.io/created-by=${UUID} --no-headers -o custom-columns=NAME:.metadata.name)
 _exec="${_kubectl} exec  ${POD} -n ${namespace} -c compute --"
 
- if [ "${action}" == "suspend" ]; then
+ if [ "${action}" == "pause" ]; then
+    ${_virtctl} pause ${vm}
+    sleep ${timeout}
+elif [ "${action}" == "dump" ]; then
     ${_exec} mkdir -p /var/run/libvirtt
     ${_exec} sed -i 's[#unix_sock_dir = "/run/libvirt"[unix_sock_dir = "/var/run/libvirtt"[' /etc/libvirt/libvirtd.conf 
     LIBVIRT_PID=$(${_exec} bash -c 'pidof -s libvirtd')
     ${_exec} kill ${LIBVIRT_PID}
     _virsh="${_exec} virsh -c qemu+unix:///system?socket=/var/run/libvirtt/libvirt-sock"
+    ${_exec} mkdir -p /var/run/kubevirt/dumps/${namespace}_${vm}/
+    #${_virsh} dump-create-as ${namespace}_${vm} --memspec file=/var/run/kubevirt/dumps/${namespace}_${vm}/memory --live
+    ${_virsh} dump ${namespace}_${vm} /var/run/kubevirt/dumps/${namespace}_${vm}/${namespace}_${vm}
+elif [ "${action}" == "copy" ]; then
     sleep ${timeout}
-    ${_virsh} suspend ${namespace}_${vm}
-elif [ "${action}" == "snapshot" ]; then
-    _virsh="${_exec} virsh -c qemu+unix:///system?socket=/var/run/libvirtt/libvirt-sock"
-    ${_exec} mkdir -p /var/run/kubevirt/snapshots/${namespace}_${vm}/
-    #${_virsh} snapshot-create-as ${namespace}_${vm} --memspec file=/var/run/kubevirt/snapshots/${namespace}_${vm}/memory --live
-    ${_virsh} dump ${namespace}_${vm} /var/run/kubevirt/snapshots/${namespace}_${vm}/${namespace}_${vm}
-elif [ "${action}" == "resume" ]; then
+elif [ "${action}" == "unpause" ]; then
     ${_exec} sed -i 's[unix_sock_dir = "/var/run/libvirtt"[#unix_sock_dir = "/var/run/libvirt"[' /etc/libvirt/libvirtd.conf
     LIBVIRT_PID=$(${_exec} bash -c 'pidof -s libvirtd')
     ${_exec} kill ${LIBVIRT_PID}
     _virsh="${_exec} virsh"
     ${_exec} rm -rf /var/run/libvirtt
     sleep ${timeout}
-    ${_virsh} resume ${namespace}_${vm}
+    ${_virtctl} unpause ${vm}
 fi
 
