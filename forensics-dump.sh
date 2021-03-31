@@ -1,10 +1,15 @@
 #!/bin/bash -x
 set -euo pipefail
 
+RED='\e[31m'
+GREEN='\e[32m'
+RESET='\e[0m'
+
 namespace=default
 action=""
 _kubectl="${KUBECTL_BINARY:-oc}"
-timeout=3
+timeout=5
+timestamp=$(date +%Y%m%d-%H%M%S)
 
 options=$(getopt -o n: --long pause,dump,copy,unpause -- "$@")
 [ $? -eq 0 ] || {
@@ -63,7 +68,7 @@ elif [ "${action}" == "dump" ]; then
     sleep ${timeout}
     ${_exec} mkdir -p /var/run/kubevirt/dumps/${namespace}_${vm}/
     #${_virsh} dump-create-as ${namespace}_${vm} --memspec file=/var/run/kubevirt/dumps/${namespace}_${vm}/memory --live
-    ${_virsh} dump ${namespace}_${vm} /var/run/kubevirt/dumps/${namespace}_${vm}/${namespace}_${vm}
+    ${_virsh} dump ${namespace}_${vm} /var/run/kubevirt/dumps/${namespace}_${vm}/${namespace}_${vm}-${timestamp}.dump
 elif [ "${action}" == "copy" ]; then
     sleep ${timeout}
 elif [ "${action}" == "unpause" ]; then
