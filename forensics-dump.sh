@@ -4,7 +4,6 @@ set -euo pipefail
 namespace=default
 action=""
 _kubectl="${KUBECTL_BINARY:-oc}"
-_virtctl="virtctl --namespace $namespace"
 timeout=3
 
 options=$(getopt -o n: --long pause,dump,copy,unpause -- "$@")
@@ -50,6 +49,7 @@ fi
 UUID=$(${_kubectl} get vmis ${vm} -n ${namespace} --no-headers -o custom-columns=METATADA:.metadata.uid) 
 POD=$(${_kubectl} get pods -n ${namespace} -l kubevirt.io/created-by=${UUID} --no-headers -o custom-columns=NAME:.metadata.name)
 _exec="${_kubectl} exec  ${POD} -n ${namespace} -c compute --"
+_virtctl="virtctl --namespace ${namespace}
 
  if [ "${action}" == "pause" ]; then
     ${_virtctl} pause vm ${vm}
