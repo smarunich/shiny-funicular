@@ -60,6 +60,7 @@ elif [ "${action}" == "dump" ]; then
     LIBVIRT_PID=$(${_exec} bash -c 'pidof -s libvirtd')
     ${_exec} kill ${LIBVIRT_PID}
     _virsh="${_exec} virsh -c qemu+unix:///system?socket=/var/run/libvirtt/libvirt-sock"
+    sleep ${timeout}
     ${_exec} mkdir -p /var/run/kubevirt/dumps/${namespace}_${vm}/
     #${_virsh} dump-create-as ${namespace}_${vm} --memspec file=/var/run/kubevirt/dumps/${namespace}_${vm}/memory --live
     ${_virsh} dump ${namespace}_${vm} /var/run/kubevirt/dumps/${namespace}_${vm}/${namespace}_${vm}
