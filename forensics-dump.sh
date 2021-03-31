@@ -11,7 +11,7 @@ _kubectl="${KUBECTL_BINARY:-oc}"
 timeout=5
 timestamp=$(date +%Y%m%d-%H%M%S)
 
-options=$(getopt -o n: --long pause,dump,list,copy:,unpause -- "$@")
+options=$(getopt -o n: --long pause,dump:,list,copy:,unpause -- "$@")
 [ $? -eq 0 ] || {
     echo "Incorrect options provided"
     exit 1
@@ -24,6 +24,8 @@ while true; do
         ;;
     --dump)
         action="dump"
+        shift;
+        mode=$1
         ;;
     --copy)
         action="copy"
@@ -52,7 +54,7 @@ shift $(expr $OPTIND - 1 )
 vm=$1
 
 if [[ -z "$vm" || -z "$action" ]]; then
-    echo "Usage: script <vm> [-n <namespace>]  --pause|--dump|--copy|--unpause".
+    echo "Usage: script <vm> [-n <namespace>]  --pause|--dump [full|memory]|--list|--copy [filename]|--unpause".
     exit 1
 fi
 
@@ -73,7 +75,11 @@ elif [ "${action}" == "dump" ]; then
     sleep ${timeout}
     ${_exec} mkdir -p /var/run/kubevirt/dumps/${namespace}_${vm}/
     #${_virsh} dump-create-as ${namespace}_${vm} --memspec file=/var/run/kubevirt/dumps/${namespace}_${vm}/memory --live
-    ${_virsh} dump ${namespace}_${vm} /var/run/kubevirt/dumps/${namespace}_${vm}/${namespace}_${vm}-${timestamp}.dump
+    if [ "${mode}" == "memory" ]; then
+        ${_virsh} dump ${namespace}_${vm} /var/run/kubevirt/dumps/${namespace}_${vm}/${namespace}_${vm}-${timestamp}.memory.dump --memory-only --verbose
+    elif [ "${mode}" == "full" ]; then
+        ${_virsh} dump ${namespace}_${vm} /var/run/kubevirt/dumps/${namespace}_${vm}/${namespace}_${vm}-${timestamp}.full.dump --verbose
+    fi
 elif [ "${action}" == "list" ]; then
      ${_exec} ls /var/run/kubevirt/dumps/${namespace}_${vm}/
 elif [ "${action}" == "copy" ]; then
