@@ -25,7 +25,7 @@ while true; do
     --dump)
         action="dump"
         ;;
-    --dump)
+    --copy)
         action="copy"
         ;;
     --unpause)
@@ -70,7 +70,7 @@ elif [ "${action}" == "dump" ]; then
     #${_virsh} dump-create-as ${namespace}_${vm} --memspec file=/var/run/kubevirt/dumps/${namespace}_${vm}/memory --live
     ${_virsh} dump ${namespace}_${vm} /var/run/kubevirt/dumps/${namespace}_${vm}/${namespace}_${vm}-${timestamp}.dump
 elif [ "${action}" == "copy" ]; then
-    oc cp ${POD}:/var/run/kubevirt/dumps/${namespace}_${vm}/${namespace}_${vm}-${timestamp}.dump ${namespace}_${vm}-${timestamp}.dump
+    ${_kubectl} cp ${POD}:/var/run/kubevirt/dumps/${namespace}_${vm}/${namespace}_${vm}-${timestamp}.dump ${namespace}_${vm}-${timestamp}.dump
     sleep ${timeout}
 elif [ "${action}" == "unpause" ]; then
     ${_exec} sed -i 's[unix_sock_dir = "/var/run/libvirtt"[#unix_sock_dir = "/var/run/libvirt"[' /etc/libvirt/libvirtd.conf
