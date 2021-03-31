@@ -64,6 +64,9 @@ _exec="${_kubectl} exec  ${POD} -n ${namespace} -c compute --"
 _virtctl="virtctl --namespace ${namespace}"
 
  if [ "${action}" == "pause" ]; then
+    echo "Usage: script <vm> [-n <namespace>]  --pause|--dump [full|memory]|--list|--copy [filename]|--unpause".
+    exit 1
+elif [ "${action}" == "pause" ]; then
     ${_virtctl} pause vm ${vm}
     sleep ${timeout}
 elif [ "${action}" == "dump" ]; then
