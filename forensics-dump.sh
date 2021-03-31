@@ -75,10 +75,8 @@ elif [ "${action}" == "dump" ]; then
     ${_virsh} dump ${namespace}_${vm} /var/run/kubevirt/dumps/${namespace}_${vm}/${namespace}_${vm}-${timestamp}.dump
 elif [ "${action}" == "list" ]; then
      ${_exec} ls /var/run/kubevirt/dumps/${namespace}_${vm}/
-    sleep ${timeout}
 elif [ "${action}" == "copy" ]; then
-    ${_kubectl} cp ${POD}:/var/run/kubevirt/dumps/${namespace}_${vm}/${namespace}_${vm}-${timestamp}.dump ${namespace}_${vm}-${timestamp}.dump
-    sleep ${timeout}
+    ${_kubectl} cp ${POD}:/var/run/kubevirt/dumps/${namespace}_${vm}/${filename} ${filename}
 elif [ "${action}" == "unpause" ]; then
     ${_exec} sed -i 's[unix_sock_dir = "/var/run/libvirtt"[#unix_sock_dir = "/var/run/libvirt"[' /etc/libvirt/libvirtd.conf
     LIBVIRT_PID=$(${_exec} bash -c 'pidof -s libvirtd')
