@@ -27,6 +27,7 @@ while true; do
         ;;
     --copy)
         action="copy"
+        shift;
         filename=$1
         ;;
     --list)
